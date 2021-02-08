@@ -6,7 +6,8 @@ import (
 )
 
 const (
-	version = "1.0.0"
+	version    = "1.1.0"
+	minSMBuild = 2144
 )
 
 var (
@@ -28,6 +29,8 @@ var (
 	srcServices []smServiceStruct
 	dstServices []smServiceStruct
 	languages   = make(map[string]langsStruct)
+
+	smStatusSupport = false
 )
 
 // General Structs
@@ -48,6 +51,9 @@ type counterStruct struct {
 	FeedbackCreated    int
 	FeedbackSkipped    int
 	FeedbackError      int
+	StatusCreated      int
+	StatusSkipped      int
+	StatusError        int
 }
 
 type entityObjStruct struct {
@@ -290,4 +296,52 @@ type feedbackExtraParamsStruct struct {
 	HServiceID     string `json:"h_service_id"`
 	HFieldRequired string `json:"h_field_required"`
 	HFieldType     string `json:"h_field_type"`
+}
+
+//-- Sub Status Structs
+type espGetStatusStruct struct {
+	MethodResult  string                `xml:"status,attr"`
+	State         espStateStruct        `xml:"state"`
+	StatusDetails []statusDetailsStruct `xml:"params>rowData>row"`
+}
+
+type statusDetailsStruct struct {
+	HID                 string `xml:"h_id"`
+	HStatusID           int    `xml:"h_status_id"`
+	HStatus             string `xml:"h_status"`
+	HName               string `xml:"h_name"`
+	HCustomerLabel      string `xml:"h_customer_label"`
+	HRequestType        string `xml:"h_request_type"`
+	HServiceID          string `xml:"h_service_id"`
+	HParentStatus       string `json:"h_parent_status"`
+	HPauseIndef         string `json:"h_pause_indef"`
+	HReasonRequired     string `json:"h_reason_required"`
+	HTimelineVisibility string `json:"h_timeline_visibility"`
+	HSupplierEnabled    string `json:"h_supplier_enabled"`
+	HLanguage           string `xml:"h_language"`
+	HDatePublished      string `xml:"h_date_published"`
+}
+
+type statusExtraParamsStruct struct {
+	HRequestType        string `json:"h_request_type"`
+	HServiceID          string `json:"h_service_id"`
+	HParentStatus       string `json:"h_parent_status"`
+	HPauseIndef         string `json:"h_pause_indef"`
+	HReasonRequired     string `json:"h_reason_required"`
+	HTimelineVisibility string `json:"h_timeline_visibility"`
+	HSupplierEnabled    string `json:"h_supplier_enabled"`
+	HStatus             string `json:"h_status"`
+	HDatePublished      string `json:"h_date_published"`
+}
+
+//-- App Version Structs
+type espGetAppVerStruct struct {
+	MethodResult string         `xml:"status,attr"`
+	State        espStateStruct `xml:"state"`
+	Params       struct {
+		Application []struct {
+			Name  string `xml:"name"`
+			Build int    `xml:"build"`
+		} `xml:"application"`
+	} `xml:"params"`
 }

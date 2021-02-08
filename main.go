@@ -59,6 +59,8 @@ func main() {
 		os.Exit(0)
 	}
 
+	getSMAppVer()
+
 	srcServices = getServices(configSource)
 	dstServices = getServices(configDestination)
 
@@ -281,7 +283,54 @@ func main() {
 			}
 		}
 
+		if smStatusSupport {
+			//Get Substatus records for current Service
+			sourceLangStatuses, err := getStatuses(srcService.HLinkedServiceID, configSource)
+			if err != nil {
+				logError(err, true)
+				continue
+			}
+			destLangStatuses, err := getStatuses(srcService.HLinkedServiceID, configDestination)
+			if err != nil {
+				logError(err, true)
+				continue
+			}
+
+			//Process Substatus records for current Service
+			for _, ss := range sourceLangStatuses {
+				transStatus := true
+				for _, ds := range destLangStatuses {
+					if ds.HStatusID == ss.HStatusID && ds.HLanguage == configDestination {
+						transStatus = false
+					}
+				}
+				if transStatus {
+					logInfo("[SUBSTATUS] Translating ["+ss.HName+"] from "+configSource+" to "+configDestination, true)
+					translated, err := translateData(ss.HName, ss.HCustomerLabel)
+					if err != nil {
+						logError(err, true)
+						counters.StatusError++
+						continue
+					}
+					extraParams := makeStatusExtraParams(ss)
+					entityObj := makeStatusEntityObj()
+					err = translateAddLanguage(entityObj, translated.TranslatedTitle, translated.TranslatedDescription, configDestination, extraParams, ss.HStatusID)
+					if err != nil {
+						logError(err, true)
+						counters.StatusError++
+						continue
+					} else {
+						logInfo("[SUBSTATUS] ["+ss.HName+"] successfully translated from "+configSource+" to "+configDestination, true)
+						counters.StatusCreated++
+					}
+				} else {
+					logInfo("[SUBSTATUS] ["+ss.HName+"] has already been translated to "+configDestination, true)
+					counters.StatusSkipped++
+				}
+			}
+		}
 	}
+
 	logInfo("---- Service Bulk Translation Complete ----", true)
 	logInfo("Service Translations Created: "+strconv.Itoa(counters.ServicesTranslated), true)
 	logInfo("Service Translations Skipped: "+strconv.Itoa(counters.ServicesSkipped), true)
@@ -298,5 +347,10 @@ func main() {
 	logInfo("Feedback Question Translations Created: "+strconv.Itoa(counters.FeedbackCreated), true)
 	logInfo("Feedback Question Translations Skipped: "+strconv.Itoa(counters.FeedbackSkipped), true)
 	logInfo("Feedback Question Translations Errors "+strconv.Itoa(counters.FeedbackError), true)
+	if smStatusSupport {
+		logInfo("Substatus Translations Created: "+strconv.Itoa(counters.StatusCreated), true)
+		logInfo("Substatus Translations Skipped: "+strconv.Itoa(counters.StatusSkipped), true)
+		logInfo("Substatus Translations Errors "+strconv.Itoa(counters.StatusError), true)
+	}
 
 }

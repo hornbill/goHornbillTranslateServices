@@ -85,6 +85,29 @@ func getLangs() {
 	}
 }
 
+func getSMAppVer() {
+	debugLog("session::getApplicationList")
+	xmlmcResponse, err := espXmlmc.Invoke("session", "getApplicationList")
+	if err != nil {
+		logr.Fatal("API Call failed when returning list of applications from Hornbill: " + err.Error())
+	}
+
+	var xmlRespon espGetAppVerStruct
+	err = xml.Unmarshal([]byte(xmlmcResponse), &xmlRespon)
+	if err != nil {
+		logr.Fatal("Unmarshal failed when returning list of applications from Hornbill: " + err.Error())
+	}
+	if xmlRespon.MethodResult != "ok" {
+		logr.Fatal("Error from Hornbill when returning list of application data: " + xmlRespon.State.ErrorRet)
+	}
+
+	for _, v := range xmlRespon.Params.Application {
+		if v.Name == "com.hornbill.servicemanager" && v.Build >= minSMBuild {
+			smStatusSupport = true
+		}
+	}
+}
+
 func logInfo(s string, outputToCLI bool) {
 	logFile.Info(s)
 	if outputToCLI {
