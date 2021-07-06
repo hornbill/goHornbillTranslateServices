@@ -115,25 +115,9 @@ func logInfo(s string, outputToCLI bool) {
 	}
 }
 
-func logWarn(s string, outputToCLI bool) {
-	logFile.Warn(s)
-	if outputToCLI {
-		logr.Warn(s)
-	}
-}
-
 func logError(e error, outputToCLI bool) {
 	logFile.Error(e)
 	if outputToCLI {
 		logr.Error(e)
-	}
-}
-
-func logDebug(s string, outputToCLI bool) {
-	if configDebug {
-		logFile.Debug(s)
-		if outputToCLI {
-			logr.Debug(s)
-		}
 	}
 }
